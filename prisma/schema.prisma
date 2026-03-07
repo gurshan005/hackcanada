@@ -1,0 +1,418 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  INSTRUCTOR
+  TA
+  ADMIN
+}
+
+enum SectionRole {
+  LEAD
+  CO_INSTRUCTOR
+  TA
+}
+
+enum ArtifactType {
+  AUDIO_NOTE
+  TEXT_NOTE
+  DOCUMENT
+}
+
+enum TranscriptionStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum EvidenceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ObservationType {
+  PARTICIPATION
+  REASONING
+  COLLABORATION
+  PREPAREDNESS
+  ASSIGNMENT_HABIT
+}
+
+enum DraftStatus {
+  DRAFT
+  FINALIZED
+}
+
+enum ExportDestination {
+  CSV
+  BLACKBOARD
+  BACKBOARD
+}
+
+enum ExportStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+model Institution {
+  id          String      @id @default(cuid())
+  name        String
+  timezone    String      @default("America/Toronto")
+  createdAt   DateTime    @default(now())
+  users       User[]
+  sections    Section[]
+  students    Student[]
+  reportCycles ReportCycle[]
+  rubrics     Rubric[]
+  auditEvents AuditEvent[]
+}
+
+model User {
+  id                 String               @id @default(cuid())
+  institutionId      String
+  institution        Institution          @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  email              String
+  fullName           String
+  role               UserRole             @default(INSTRUCTOR)
+  ssoSubject         String?
+  createdAt          DateTime             @default(now())
+  teachingAssignments TeachingAssignment[]
+  createdSessions    ClassSession[]       @relation("SessionCreator")
+  createdArtifacts   Artifact[]           @relation("ArtifactCreator")
+  createdEvidence    EvidenceCard[]       @relation("EvidenceCreator")
+  reviewedEvidence   EvidenceCard[]       @relation("EvidenceReviewer")
+  generatedReports   ReportDraft[]        @relation("ReportGenerator")
+  createdCycles      ReportCycle[]        @relation("CycleCreator")
+  createdRubrics     Rubric[]             @relation("RubricCreator")
+  approvedScores     CriterionScore[]     @relation("ScoreApprover")
+  recordedConsents   DataConsent[]        @relation("ConsentRecorder")
+  auditEvents        AuditEvent[]         @relation("AuditActor")
+
+  @@unique([institutionId, email])
+}
+
+model Section {
+  id                  String               @id @default(cuid())
+  institutionId       String
+  institution         Institution          @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  courseCode          String
+  title               String
+  term                String
+  name                String
+  lmsSectionRef       String?
+  createdAt           DateTime             @default(now())
+  teachingAssignments TeachingAssignment[]
+  enrollments         Enrollment[]
+  sessions            ClassSession[]
+  artifacts           Artifact[]
+  evidenceCards       EvidenceCard[]
+  rubrics             Rubric[]
+  reportCycles        ReportCycle[]
+  dataConsents        DataConsent[]
+
+  @@index([institutionId, term])
+}
+
+model TeachingAssignment {
+  id        String      @id @default(cuid())
+  sectionId String
+  userId    String
+  role      SectionRole
+  section   Section     @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, userId])
+}
+
+model Student {
+  id                   String             @id @default(cuid())
+  institutionId        String
+  institution          Institution        @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  externalStudentId    String?
+  fullName             String
+  email                String?
+  createdAt            DateTime           @default(now())
+  enrollments          Enrollment[]
+  evidenceCards        EvidenceCard[]
+  reportDrafts         ReportDraft[]
+  dataConsents         DataConsent[]
+  transcriptSegmentsAsSpeaker TranscriptSegment[] @relation("StudentSpeaker")
+
+  @@unique([institutionId, externalStudentId])
+  @@index([institutionId, fullName])
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  sectionId String
+  studentId String
+  createdAt DateTime @default(now())
+  section   Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, studentId])
+}
+
+model ClassSession {
+  id          String        @id @default(cuid())
+  sectionId   String
+  title       String
+  startedAt   DateTime
+  endedAt     DateTime?
+  createdById String
+  createdAt   DateTime      @default(now())
+  section     Section       @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  createdBy   User          @relation("SessionCreator", fields: [createdById], references: [id])
+  artifacts   Artifact[]
+  evidenceCards EvidenceCard[]
+
+  @@index([sectionId, startedAt])
+}
+
+model Artifact {
+  id              String       @id @default(cuid())
+  sectionId       String
+  sessionId       String?
+  createdById     String
+  type            ArtifactType
+  storageUri      String
+  rawText         String?
+  durationSeconds Int?
+  createdAt       DateTime     @default(now())
+  section         Section      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  session         ClassSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  createdBy       User         @relation("ArtifactCreator", fields: [createdById], references: [id])
+  transcription   Transcription?
+
+  @@index([sectionId, createdAt])
+}
+
+model Transcription {
+  id            String              @id @default(cuid())
+  artifactId    String              @unique
+  provider      String              @default("elevenlabs")
+  providerJobId String?
+  status        TranscriptionStatus @default(QUEUED)
+  languageCode  String              @default("en")
+  fullText      String?
+  confidence    Float?
+  errorMessage  String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  artifact      Artifact            @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  segments      TranscriptSegment[]
+
+  @@index([status])
+}
+
+model TranscriptSegment {
+  id               String          @id @default(cuid())
+  transcriptionId  String
+  seqNo            Int
+  speakerLabel     String?
+  speakerStudentId String?
+  startMs          Int
+  endMs            Int
+  text             String
+  confidence       Float?
+  createdAt        DateTime        @default(now())
+  transcription    Transcription   @relation(fields: [transcriptionId], references: [id], onDelete: Cascade)
+  speakerStudent   Student?        @relation("StudentSpeaker", fields: [speakerStudentId], references: [id], onDelete: SetNull)
+  evidenceCards    EvidenceCard[]
+
+  @@unique([transcriptionId, seqNo])
+}
+
+model Rubric {
+  id            String            @id @default(cuid())
+  institutionId String
+  sectionId     String
+  name          String
+  scaleMin      Float             @default(0)
+  scaleMax      Float             @default(4)
+  createdById   String
+  createdAt     DateTime          @default(now())
+  institution   Institution       @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  section       Section           @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  createdBy     User              @relation("RubricCreator", fields: [createdById], references: [id])
+  criteria      RubricCriterion[]
+
+  @@index([sectionId])
+}
+
+model RubricCriterion {
+  id              String           @id @default(cuid())
+  rubricId        String
+  code            String
+  title           String
+  description     String?
+  weight          Float            @default(1)
+  position        Int
+  rubric          Rubric           @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  criterionScores CriterionScore[]
+
+  @@unique([rubricId, code])
+}
+
+model EvidenceCard {
+  id              String           @id @default(cuid())
+  sectionId       String
+  sessionId       String?
+  studentId       String?
+  sourceSegmentId String?
+  observationType ObservationType
+  evidenceText    String
+  aiSummary       String
+  observedAt      DateTime
+  confidence      Float
+  status          EvidenceStatus   @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  createdById     String
+  createdAt       DateTime         @default(now())
+  section         Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  session         ClassSession?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  student         Student?         @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  sourceSegment   TranscriptSegment? @relation(fields: [sourceSegmentId], references: [id], onDelete: SetNull)
+  reviewedBy      User?            @relation("EvidenceReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdBy       User             @relation("EvidenceCreator", fields: [createdById], references: [id])
+  ragIndexItem    RagIndexItem?
+  reportCitations ReportCitation[]
+
+  @@index([sectionId, studentId, observedAt])
+  @@index([status])
+}
+
+model RagIndexItem {
+  id             String       @id @default(cuid())
+  evidenceCardId String       @unique
+  ragDocumentId  String
+  ragChunkIds    Json?
+  syncStatus     String       @default("PENDING")
+  indexedAt      DateTime?
+  evidenceCard   EvidenceCard @relation(fields: [evidenceCardId], references: [id], onDelete: Cascade)
+}
+
+model ReportCycle {
+  id            String        @id @default(cuid())
+  institutionId String
+  sectionId     String
+  name          String
+  periodStart   DateTime
+  periodEnd     DateTime
+  dueDate       DateTime?
+  createdById   String
+  createdAt     DateTime      @default(now())
+  institution   Institution   @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  section       Section       @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  createdBy     User          @relation("CycleCreator", fields: [createdById], references: [id])
+  drafts        ReportDraft[]
+
+  @@index([sectionId, periodStart])
+}
+
+model ReportDraft {
+  id            String           @id @default(cuid())
+  cycleId       String
+  studentId     String
+  generatedById String
+  modelName     String
+  status        DraftStatus      @default(DRAFT)
+  draftText     String
+  finalText     String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  cycle         ReportCycle      @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  student       Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  generatedBy   User             @relation("ReportGenerator", fields: [generatedById], references: [id])
+  citations     ReportCitation[]
+  criterionScores CriterionScore[]
+  lmsExports    LmsExport[]
+
+  @@unique([cycleId, studentId])
+}
+
+model ReportCitation {
+  id            String      @id @default(cuid())
+  reportDraftId String
+  sentenceIndex Int
+  evidenceCardId String
+  snippet       String
+  relevanceScore Float?
+  createdAt     DateTime    @default(now())
+  reportDraft   ReportDraft @relation(fields: [reportDraftId], references: [id], onDelete: Cascade)
+  evidenceCard  EvidenceCard @relation(fields: [evidenceCardId], references: [id], onDelete: Restrict)
+
+  @@index([reportDraftId, sentenceIndex])
+}
+
+model CriterionScore {
+  id                String         @id @default(cuid())
+  reportDraftId     String
+  criterionId       String
+  suggestedScore    Float?
+  suggestedRationale String?
+  approvedScore     Float?
+  approvedById      String?
+  approvedAt        DateTime?
+  reportDraft       ReportDraft    @relation(fields: [reportDraftId], references: [id], onDelete: Cascade)
+  criterion         RubricCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  approvedBy        User?          @relation("ScoreApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@unique([reportDraftId, criterionId])
+}
+
+model LmsExport {
+  id            String            @id @default(cuid())
+  reportDraftId String
+  destination   ExportDestination
+  status        ExportStatus      @default(QUEUED)
+  payload       Json
+  externalRef   String?
+  errorMessage  String?
+  createdAt     DateTime          @default(now())
+  exportedAt    DateTime?
+  reportDraft   ReportDraft       @relation(fields: [reportDraftId], references: [id], onDelete: Cascade)
+}
+
+model DataConsent {
+  id                 String    @id @default(cuid())
+  sectionId          String
+  studentId          String
+  audioAllowed       Boolean   @default(false)
+  aiProcessingAllowed Boolean  @default(false)
+  effectiveFrom      DateTime
+  effectiveTo        DateTime?
+  recordedById       String?
+  createdAt          DateTime  @default(now())
+  section            Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  student            Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  recordedBy         User?     @relation("ConsentRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@unique([sectionId, studentId, effectiveFrom])
+}
+
+model AuditEvent {
+  id            String      @id @default(cuid())
+  institutionId String
+  actorUserId   String?
+  action        String
+  entityType    String
+  entityId      String?
+  beforeState   Json?
+  afterState    Json?
+  createdAt     DateTime    @default(now())
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  actor         User?       @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([institutionId, entityType, createdAt])
+}

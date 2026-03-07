@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ObserveIQ — Observation notes. Organized. In seconds.</title>
+
+    <!-- Tailwind (utility CSS) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Open Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- GSAP (subtle Apple-like motion) -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+
+    <style>
+      :root {
+        --bg: #0b0c10;
+        --fg: #e9eaee;
+        --muted: rgba(233, 234, 238, 0.72);
+        --hairline: rgba(255, 255, 255, 0.08);
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel2: rgba(255, 255, 255, 0.035);
+        --shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+        --shadow2: 0 18px 45px rgba(0, 0, 0, 0.35);
+        --accent: #3b82f6;
+        --accent2: #b08968;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family:
+          "Open Sans",
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          "Apple Color Emoji",
+          "Segoe UI Emoji";
+        background:
+          radial-gradient(1000px 700px at 20% 10%, rgba(59, 130, 246, 0.18), transparent 60%),
+          radial-gradient(900px 650px at 80% 25%, rgba(176, 137, 104, 0.16), transparent 60%),
+          radial-gradient(900px 700px at 55% 85%, rgba(16, 185, 129, 0.10), transparent 60%),
+          var(--bg);
+        color: var(--fg);
+        overflow-x: hidden;
+      }
+
+      /* Swiss-ish grid background */
+      .gridlines {
+        background-image:
+          linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 72px 72px;
+        mask-image: radial-gradient(65% 60% at 50% 35%, black 50%, transparent 100%);
+        opacity: 0.25;
+      }
+
+      /* Apple-like frosted panels */
+      .glass {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
+        border: 1px solid var(--hairline);
+        box-shadow: var(--shadow2);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      .glass-soft {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.028));
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .hairline {
+        border: 1px solid var(--hairline);
+      }
+
+      /* Premium buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        border-radius: 999px;
+        padding: 0.85rem 1.1rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        transition: transform 0.18s ease, filter 0.18s ease, background 0.18s ease;
+        user-select: none;
+      }
+      .btn:active {
+        transform: translateY(1px) scale(0.99);
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(176, 137, 104, 0.92));
+        box-shadow: 0 18px 45px rgba(59, 130, 246, 0.18);
+      }
+      .btn-primary:hover {
+        filter: brightness(1.05);
+      }
+      .btn-ghost {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.085);
+      }
+
+      /* Swiss typography */
+      .tight {
+        letter-spacing: -0.035em;
+      }
+      .caps {
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      /* Device mock */
+      .device {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .device-topbar {
+        height: 42px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .pill {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 999px;
+        padding: 0.25rem 0.55rem;
+        font-size: 12px;
+        color: rgba(233, 234, 238, 0.82);
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border-radius: 999px;
+        padding: 0.35rem 0.6rem;
+        font-size: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(233, 234, 238, 0.86);
+      }
+
+      .glowline {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(800px 250px at var(--x, 50%) var(--y, 0%), rgba(59, 130, 246, 0.18), transparent 55%);
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+      .glowwrap:hover .glowline {
+        opacity: 1;
+      }
+
+      /* Reduce motion */
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+
+    <script>
+      // Tailwind config (optional)
+      tailwind.config = {
+        theme: {
+          extend: {
+            container: { center: true, padding: "1.25rem" }
+          }
+        }
+      };
+    </script>
+  </head>
+
+  <body>
+    <!-- Background grid -->
+    <div class="fixed inset-0 gridlines"></div>
+
+    <!-- NAV -->
+    <header class="sticky top-0 z-50">
+      <div class="mx-auto max-w-6xl px-5">
+        <div class="glass mt-4 rounded-2xl px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
+              <span class="text-white font-semibold">O</span>
+            </div>
+            <div class="leading-tight">
+              <div class="text-sm font-semibold">ObserveIQ</div>
+              <div class="text-[11px] text-white/60 -mt-0.5">Teacher observation notes</div>
+            </div>
+          </div>
+
+          <nav class="hidden md:flex items-center gap-7 text-sm text-white/70">
+            <a class="hover:text-white transition" href="#product">Product</a>
+            <a class="hover:text-white transition" href="#how">How it works</a>
+            <a class="hover:text-white transition" href="#privacy">Privacy</a>
+            <a class="hover:text-white transition" href="#pricing">Pricing</a>
+          </nav>
+
+          <div class="flex items-center gap-2">
+            <a class="btn btn-ghost text-sm" href="/login">
+              <i data-lucide="sparkles" class="h-4 w-4"></i>
+              Request demo
+            </a>
+            <a class="btn btn-primary text-sm" href="/login">
+              <i data-lucide="arrow-right" class="h-4 w-4"></i>
+              Join pilot
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <main class="relative">
+      <section class="pt-14 md:pt-20">
+        <div class="mx-auto max-w-6xl px-5">
+          <div class="grid md:grid-cols-2 gap-10 md:gap-12 items-center">
+            <div>
+              <div class="caps text-[11px] text-white/55 mb-4">
+                Evidence-grade notes • AI grounded in your words
+              </div>
+
+              <h1 class="tight text-4xl md:text-6xl font-semibold leading-[1.02]">
+                Observation notes.
+                <span class="text-white/70">Organized.</span>
+                <span class="bg-clip-text text-transparent"
+                  style="background-image: linear-gradient(135deg, rgba(59,130,246,1), rgba(176,137,104,1));">
+                  In seconds.
+                </span>
+              </h1>
+
+              <p class="mt-5 text-base md:text-lg text-white/70 leading-relaxed max-w-xl">
+                Capture classroom observations in 10 seconds, automatically tag and structure them with AI,
+                and generate report-ready summaries backed by sources.
+              </p>
+
+              <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                <a class="btn btn-primary" href="/login">
+                  <i data-lucide="sparkles" class="h-5 w-5"></i>
+                  See the demo flow
+                </a>
+                <a class="btn btn-ghost" href="#product">
+                  <i data-lucide="layers" class="h-5 w-5"></i>
+                  Explore features
+                </a>
+              </div>
+
+              <div class="mt-8 flex items-center gap-2 text-white/55 text-sm">
+                <i data-lucide="shield-check" class="h-4 w-4"></i>
+                AI outputs are traceable to the exact notes they used.
+              </div>
+
+              <div class="mt-10 grid grid-cols-3 gap-3 max-w-lg">
+                <div class="glass-soft rounded-2xl p-4">
+                  <div class="text-2xl font-semibold tight">10s</div>
+                  <div class="text-xs text-white/60 mt-1">Capture speed</div>
+                </div>
+                <div class="glass-soft rounded-2xl p-4">
+                  <div class="text-2xl font-semibold tight">Auto</div>
+                  <div class="text-xs text-white/60 mt-1">Tags + structure</div>
+                </div>
+                <div class="glass-soft rounded-2xl p-4">
+                  <div class="text-2xl font-semibold tight">Cited</div>
+                  <div class="text-xs text-white/60 mt-1">Summaries</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Device mock / UI preview -->
+            <div class="glowwrap relative">
+              <div class="glowline"></div>
+
+              <div class="device">
+                <div class="device-topbar">
+                  <div class="flex items-center gap-2">
+                    <span class="pill">Class: 8A</span>
+                    <span class="pill">Math</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-white/65">
+                    <i data-lucide="search" class="h-4 w-4"></i>
+                    <i data-lucide="bell" class="h-4 w-4"></i>
+                  </div>
+                </div>
+
+                <div class="p-5 md:p-6">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-white/70 text-xs caps">Quick capture</div>
+                      <div class="tight text-xl font-semibold mt-1">Jayden Thompson</div>
+                    </div>
+                    <div class="h-10 w-10 rounded-full bg-white/10 border border-white/10"></div>
+                  </div>
+
+                  <div class="mt-4 glass-soft rounded-2xl p-4">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="text-sm text-white/75 leading-relaxed">
+                        “Distracted during independent work, needed multiple redirections.”
+                      </div>
+                      <i data-lucide="mic" class="h-4 w-4 text-white/60 mt-1"></i>
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap gap-2">
+                      <span class="tag"><span class="h-2 w-2 rounded-full bg-blue-400"></span> Off-task</span>
+                      <span class="tag"><span class="h-2 w-2 rounded-full bg-amber-300"></span> Focus</span>
+                      <span class="tag"><span class="h-2 w-2 rounded-full bg-emerald-400"></span> Independent work</span>
+                      <span class="tag"><i data-lucide="sparkles" class="h-3 w-3"></i> AI-suggested</span>
+                    </div>
+
+                    <div class="mt-4 flex gap-2">
+                      <button class="btn btn-primary w-full">
+                        <i data-lucide="check" class="h-4 w-4"></i>
+                        Save note
+                      </button>
+                      <button class="btn btn-ghost">
+                        <i data-lucide="edit-3" class="h-4 w-4"></i>
+                      </button>
+                    </div>
+
+                    <div class="mt-4 text-xs text-white/55 flex items-center justify-between">
+                      <span>Today • 10:15 AM</span>
+                      <span class="flex items-center gap-1">
+                        <i data-lucide="link" class="h-3.5 w-3.5"></i>
+                        Sources locked
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="mt-5 grid md:grid-cols-2 gap-3">
+                    <div class="glass-soft rounded-2xl p-4">
+                      <div class="text-xs text-white/60 caps">Weekly summary</div>
+                      <div class="mt-2 text-sm text-white/78 leading-relaxed">
+                        Jayden participated actively in group work, but focus dipped during independent tasks.
+                      </div>
+                      <div class="mt-3 text-xs text-white/55">Sources: Notes 3, 4, 6</div>
+                    </div>
+                    <div class="glass-soft rounded-2xl p-4">
+                      <div class="text-xs text-white/60 caps">Next steps</div>
+                      <ul class="mt-2 space-y-2 text-sm text-white/78">
+                        <li class="flex gap-2"><i data-lucide="dot" class="h-4 w-4 mt-0.5"></i>2-minute task-start check-in</li>
+                        <li class="flex gap-2"><i data-lucide="dot" class="h-4 w-4 mt-0.5"></i>Visual timer during solo work</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 text-xs text-white/55 text-center">
+                Demo UI • Apple-like motion • Swiss grid typography
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-14 md:mt-20 border-t border-white/10"></div>
+        </div>
+      </section>
+
+      <!-- PRODUCT -->
+      <section id="product" class="pt-16 md:pt-22">
+        <div class="mx-auto max-w-6xl px-5">
+          <div class="grid md:grid-cols-2 gap-10 items-end">
+            <div>
+              <div class="caps text-[11px] text-white/55 mb-3">Product</div>
+              <h2 class="tight text-3xl md:text-5xl font-semibold leading-[1.05]">
+                Built for the moments teachers actually have.
+              </h2>
+            </div>
+            <div class="text-white/70 leading-relaxed">
+              Capture notes fast, organize them automatically, and turn them into evidence-backed summaries.
+              No clutter. No busywork. No “AI hallucinations.”
+            </div>
+          </div>
+
+          <div class="mt-10 grid md:grid-cols-3 gap-4">
+            <div class="glass rounded-3xl p-6">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center">
+                  <i data-lucide="zap" class="h-5 w-5 text-white/80"></i>
+                </div>
+                <div class="font-semibold">10-second capture</div>
+              </div>
+              <p class="mt-4 text-sm text-white/70 leading-relaxed">
+                Tap a student or seat, speak one sentence, save. Works offline and syncs later.
+              </p>
+              <div class="mt-4 flex gap-2 flex-wrap">
+                <span class="pill">Seating chart</span>
+                <span class="pill">Voice</span>
+                <span class="pill">Templates</span>
+              </div>
+            </div>
+
+            <div class="glass rounded-3xl p-6">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center">
+                  <i data-lucide="tags" class="h-5 w-5 text-white/80"></i>
+                </div>
+                <div class="font-semibold">AI that organizes</div>
+              </div>
+              <p class="mt-4 text-sm text-white/70 leading-relaxed">
+                Auto-tags and structures notes into a consistent format. Teacher approves everything.
+              </p>
+              <div class="mt-4 flex gap-2 flex-wrap">
+                <span class="pill">Auto-tags</span>
+                <span class="pill">Clean phrasing</span>
+                <span class="pill">Confidence</span>
+              </div>
+            </div>
+
+            <div class="glass rounded-3xl p-6">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center">
+                  <i data-lucide="file-text" class="h-5 w-5 text-white/80"></i>
+                </div>
+                <div class="font-semibold">Report-ready outputs</div>
+              </div>
+              <p class="mt-4 text-sm text-white/70 leading-relaxed">
+                Weekly summaries, parent messages, and report comments with citations back to the notes.
+              </p>
+              <div class="mt-4 flex gap-2 flex-wrap">
+                <span class="pill">Cited summaries</span>
+                <span class="pill">Exports</span>
+                <span class="pill">Neutral tone</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HOW IT WORKS -->
+      <section id="how" class="pt-16 md:pt-22">
+        <div class="mx-auto max-w-6xl px-5">
+          <div class="glass rounded-[32px] p-7 md:p-10">
+            <div class="flex items-center justify-between gap-6 flex-wrap">
+              <div>
+                <div class="caps text-[11px] text-white/55 mb-3">How it works</div>
+                <h3 class="tight text-2xl md:text-4xl font-semibold">Capture → Organize → Summarize</h3>
+              </div>
+              <div class="text-white/65 max-w-xl">
+                Every output is grounded. If a summary line can’t cite a note, it doesn’t ship.
+              </div>
+            </div>
+
+            <div class="mt-8 grid md:grid-cols-3 gap-4">
+              <div class="glass-soft rounded-3xl p-6">
+                <div class="flex items-center gap-3">
+                  <span class="pill">01</span>
+                  <div class="font-semibold">Capture</div>
+                </div>
+                <p class="mt-3 text-sm text-white/70 leading-relaxed">
+                  A single observation, timestamped, with optional context (subject/activity).
+                </p>
+              </div>
+
+              <div class="glass-soft rounded-3xl p-6">
+                <div class="flex items-center gap-3">
+                  <span class="pill">02</span>
+                  <div class="font-semibold">AI organizes</div>
+                </div>
+                <p class="mt-3 text-sm text-white/70 leading-relaxed">
+                  Suggests tags + structure. Teacher accepts or edits. No “new facts.”
+                </p>
+              </div>
+
+              <div class="glass-soft rounded-3xl p-6">
+                <div class="flex items-center gap-3">
+                  <span class="pill">03</span>
+                  <div class="font-semibold">Summaries with sources</div>
+                </div>
+                <p class="mt-3 text-sm text-white/70 leading-relaxed">
+                  Weekly bullet summaries + drafts for parent emails/report comments — each line cites notes.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRIVACY -->
+      <section id="privacy" class="pt-16 md:pt-22">
+        <div class="mx-auto max-w-6xl px-5">
+          <div class="grid md:grid-cols-2 gap-10 items-center">
+            <div>
+              <div class="caps text-[11px] text-white/55 mb-3">Privacy</div>
+              <h3 class="tight text-3xl md:text-5xl font-semibold leading-[1.05]">
+                Built to be school-safe.
+              </h3>
+              <p class="mt-4 text-white/70 leading-relaxed">
+                Clear boundaries: summarize and label teacher notes only. No hidden inference. No vague claims.
+              </p>
+              <div class="mt-6 space-y-3 text-sm text-white/72">
+                <div class="flex gap-3">
+                  <i data-lucide="lock" class="h-5 w-5 text-white/70"></i>
+                  <div><span class="font-semibold text-white/85">Citations-first:</span> every AI claim links to source notes.</div>
+                </div>
+                <div class="flex gap-3">
+                  <i data-lucide="key" class="h-5 w-5 text-white/70"></i>
+                  <div><span class="font-semibold text-white/85">Access control:</span> roles, audit logs, and exports.</div>
+                </div>
+                <div class="flex gap-3">
+                  <i data-lucide="shield" class="h-5 w-5 text-white/70"></i>
+                  <div><span class="font-semibold text-white/85">Data boundaries:</span> only selected notes are processed.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass rounded-[32px] p-7 md:p-8">
+              <div class="caps text-[11px] text-white/55">Example: “grounded output”</div>
+              <div class="mt-4 text-sm text-white/78 leading-relaxed">
+                <div class="glass-soft rounded-2xl p-4">
+                  <div class="font-semibold text-white/90">Weekly Summary (Jayden)</div>
+                  <ul class="mt-3 space-y-2">
+                    <li class="flex gap-2">
+                      <i data-lucide="dot" class="h-4 w-4 mt-0.5"></i>
+                      Participated actively in group discussion. <span class="text-white/55">Sources: #4</span>
+                    </li>
+                    <li class="flex gap-2">
+                      <i data-lucide="dot" class="h-4 w-4 mt-0.5"></i>
+                      Needed multiple prompts during independent work. <span class="text-white/55">Sources: #3, #6</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="mt-4 text-xs text-white/55">
+                If a line has no sources, it won’t appear.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRICING -->
+      <section id="pricing" class="pt-16 md:pt-22">
+        <div class="mx-auto max-w-6xl px-5">
+          <div class="flex items-end justify-between gap-6 flex-wrap">
+            <div>
+              <div class="caps text-[11px] text-white/55 mb-3">Pricing</div>
+              <h3 class="tight text-3xl md:text-5xl font-semibold leading-[1.05]">
+                Simple plans.
+              </h3>
+            </div>
+            <div class="text-white/70 max-w-xl">
+              For the hackathon demo, this is just presentation—swap with whatever fits your pitch.
+            </div>
+          </div>
+
+          <div class="mt-10 grid md:grid-cols-3 gap-4">
+            <div class="glass rounded-3xl p-7">
+              <div class="text-sm text-white/65 caps">Starter</div>
+              <div class="mt-2 text-3xl font-semibold tight">$0</div>
+              <div class="text-white/55 text-sm mt-1">Single class demo</div>
+              <ul class="mt-5 space-y-2 text-sm text-white/72">
+                <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Capture + timeline</li>
+                <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Manual tags</li>
+                <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Basic export</li>
+              </ul>
+              <a class="btn btn-ghost w-full mt-6" href="/login">Use demo</a>
+            </div>
+
+            <div class="glass rounded-3xl p-7 relative overflow-hidden">
+              <div class="absolute -top-20 -right-20 h-56 w-56 rounded-full"
+                   style="background: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.35), transparent 60%);"></div>
+              <div class="text-sm text-white/65 caps">Teacher</div>
+              <div class="mt-2 text-3xl font-semibold tight">$9</div>
+              <div class="text-white/55 text-sm mt-1">Per month, per teacher</div>
+              <ul class="mt-5 space-y-2 text-sm text-white/72">
+                <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> AI tags + structure</li>
+                <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Weekly cited summaries</li>
+                <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Parent/report drafts</li>
+              </ul>
+              <a class="btn btn-primary w-full mt-6" href="/login">Join pilot</a>
+            </div>
+
+            <div class="glass rounded-3xl p-7">
+              <div class="text-sm text-white/65 caps">School</div>
+              <div class="mt-2 text-3xl font-semibold tight">Custom</div>
+              <div class="text-white/55 text-sm mt-1">Teams + controls</div>
+              <ul class="mt-5 space-y-2 text-sm text-white/72">
+                <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Co-teachers + roles</li>
+                <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> SSO (optional)</li>
+                <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Retention policies</li>
+              </ul>
+              <a class="btn btn-ghost w-full mt-6" href="/login">Contact</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DEMO CTA -->
+      <section id="demo" class="pt-16 md:pt-22 pb-16 md:pb-24">
+        <div class="mx-auto max-w-6xl px-5">
+          <div class="glass rounded-[36px] p-8 md:p-12 overflow-hidden relative">
+            <div class="absolute inset-0 pointer-events-none"
+              style="background: radial-gradient(900px 300px at 20% 10%, rgba(59,130,246,0.22), transparent 60%),
+                     radial-gradient(900px 300px at 80% 10%, rgba(176,137,104,0.2), transparent 60%);">
+            </div>
+
+            <div class="relative grid md:grid-cols-2 gap-10 items-center">
+              <div>
+                <div class="caps text-[11px] text-white/55 mb-3">Hackathon-ready</div>
+                <h3 class="tight text-3xl md:text-5xl font-semibold leading-[1.05]">
+                  One perfect flow.
+                </h3>
+                <p class="mt-4 text-white/70 leading-relaxed">
+                  Demo capture → AI tags → cited weekly summary → export. Keep scope tight. Make it beautiful.
+                </p>
+                <div class="mt-7 flex gap-3 flex-wrap">
+                  <a class="btn btn-primary" href="/login">
+                    <i data-lucide="play" class="h-5 w-5"></i>
+                    Launch demo (hook)
+                  </a>
+                  <a class="btn btn-ghost" href="/dashboard">
+                    <i data-lucide="download" class="h-5 w-5"></i>
+                    Export sample
+                  </a>
+                </div>
+              </div>
+
+              <div class="glass-soft rounded-3xl p-6">
+                <div class="text-sm font-semibold">Demo checklist</div>
+                <ul class="mt-4 space-y-2 text-sm text-white/75">
+                  <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Seating chart tap → note</li>
+                  <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> AI tags + structure</li>
+                  <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Weekly summary with sources</li>
+                  <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Export evidence pack (PDF)</li>
+                </ul>
+                <div class="mt-5 text-xs text-white/55">
+                  Tip: judges love “sources” because it proves reliability.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <footer class="mt-10 text-center text-xs text-white/45">
+            © <span id="year"></span> ObserveIQ • Minimal demo site for hackathon
+          </footer>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // Lucide icons
+      lucide.createIcons();
+
+      // Tiny hover glow tracking for the mock section
+      const glow = document.querySelector(".glowwrap");
+      if (glow) {
+        glow.addEventListener("mousemove", (e) => {
+          const r = glow.getBoundingClientRect();
+          glow.style.setProperty("--x", `${((e.clientX - r.left) / r.width) * 100}%`);
+          glow.style.setProperty("--y", `${((e.clientY - r.top) / r.height) * 100}%`);
+        });
+      }
+
+      // GSAP subtle reveal animations
+      gsap.registerPlugin(ScrollTrigger);
+
+      const reveal = (selector) => {
+        document.querySelectorAll(selector).forEach((el) => {
+          gsap.fromTo(
+            el,
+            { y: 18, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.7,
+              ease: "power2.out",
+              scrollTrigger: {
+                trigger: el,
+                start: "top 85%",
+              },
+            }
+          );
+        });
+      };
+
+      reveal("h1, h2, h3");
+      reveal(".glass, .glass-soft");
+
+      // Footer year
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>
