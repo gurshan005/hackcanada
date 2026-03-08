@@ -12,6 +12,8 @@ type CycleOption = {
   id: string;
   name: string;
   sectionId: string;
+  periodStart: string;
+  periodEnd: string;
 };
 
 type StudentOption = {
@@ -23,6 +25,9 @@ type StudentOption = {
 type DraftWithCitations = ReportDraft & {
   citations: Array<ReportCitation & { evidenceCard: { aiSummary: string; evidenceText: string } }>;
 };
+
+type CycleWindow = "START_OF_TERM" | "END_OF_TERM" | "ACTIVE_CYCLE";
+type EvidenceSource = "APPROVED" | "PENDING";
 
 type Props = {
   sections: SectionOption[];
@@ -37,21 +42,62 @@ function splitSentences(value: string): string[] {
     .filter(Boolean);
 }
 
+function toTimestamp(value: string): number {
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function chooseCycleId(cycles: CycleOption[], cycleWindow: CycleWindow): string {
+  if (cycles.length === 0) {
+    return "";
+  }
+
+  const byStartAsc = [...cycles].sort((a, b) => toTimestamp(a.periodStart) - toTimestamp(b.periodStart));
+  const byEndDesc = [...cycles].sort((a, b) => toTimestamp(b.periodEnd) - toTimestamp(a.periodEnd));
+
+  if (cycleWindow === "START_OF_TERM") {
+    return byStartAsc[0]?.id ?? "";
+  }
+
+  if (cycleWindow === "END_OF_TERM") {
+    return byEndDesc[0]?.id ?? "";
+  }
+
+  const now = Date.now();
+  const active = byEndDesc.find((cycle) => toTimestamp(cycle.periodStart) <= now && toTimestamp(cycle.periodEnd) >= now);
+  return active?.id ?? byEndDesc[0]?.id ?? "";
+}
+
 export function ReportStudio({ sections, cycles, students }: Props) {
   const [selectedSectionId, setSelectedSectionId] = useState(sections[0]?.id ?? "");
-  const [selectedCycleId, setSelectedCycleId] = useState(cycles[0]?.id ?? "");
+  const [cycleWindow, setCycleWindow] = useState<CycleWindow>("ACTIVE_CYCLE");
+  const [evidenceSource, setEvidenceSource] = useState<EvidenceSource>("APPROVED");
   const [selectedStudentId, setSelectedStudentId] = useState(students[0]?.id ?? "");
+  const [voiceNotes, setVoiceNotes] = useState("");
+  const [voiceMessage, setVoiceMessage] = useState("");
   const [draft, setDraft] = useState<DraftWithCitations | null>(null);
   const [editableText, setEditableText] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  const visibleCycles = cycles.filter((cycle) => cycle.sectionId === selectedSectionId);
-  const visibleStudents = students.filter((student) => student.sectionId === selectedSectionId);
+  const visibleCycles = useMemo(
+    () => cycles.filter((cycle) => cycle.sectionId === selectedSectionId),
+    [cycles, selectedSectionId],
+  );
+  const visibleStudents = useMemo(
+    () => students.filter((student) => student.sectionId === selectedSectionId),
+    [students, selectedSectionId],
+  );
 
-  const selectedCycleValue = visibleCycles.find((cycle) => cycle.id === selectedCycleId)
-    ? selectedCycleId
-    : visibleCycles[0]?.id ?? "";
+  const selectedCycleValue = useMemo(
+    () => chooseCycleId(visibleCycles, cycleWindow),
+    [visibleCycles, cycleWindow],
+  );
+  const selectedCycleLabel = useMemo(
+    () => visibleCycles.find((cycle) => cycle.id === selectedCycleValue)?.name ?? "No cycle available",
+    [visibleCycles, selectedCycleValue],
+  );
+
   const selectedStudentValue = visibleStudents.find((student) => student.id === selectedStudentId)
     ? selectedStudentId
     : visibleStudents[0]?.id ?? "";
@@ -75,6 +121,7 @@ export function ReportStudio({ sections, cycles, students }: Props) {
           sectionId: selectedSectionId,
           cycleId: selectedCycleValue,
           studentId: selectedStudentValue,
+          evidenceStatus: evidenceSource,
         }),
       });
 
@@ -117,11 +164,15 @@ export function ReportStudio({ sections, cycles, students }: Props) {
   };
 
   const canFinalize = Boolean(draft) && editableText.trim().length >= 20;
+  const canGenerate = Boolean(selectedSectionId && selectedCycleValue && selectedStudentValue);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[340px_1fr]">
+    <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
       <aside className="grid h-fit gap-4 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5">
-        <h2 className="text-lg font-semibold">Inputs</h2>
+        <div>
+          <h2 className="text-lg font-semibold">Draft Builder</h2>
+          <p className="mt-1 text-xs text-[var(--text-subtle)]">Set cycle scope, evidence source, and teacher voice context.</p>
+        </div>
 
         <div className="grid gap-2">
           <label className="text-xs font-semibold uppercase tracking-wide text-[var(--text-subtle)]">Section</label>
@@ -131,12 +182,11 @@ export function ReportStudio({ sections, cycles, students }: Props) {
             onChange={(event) => {
               const nextSection = event.target.value;
               setSelectedSectionId(nextSection);
-              const nextCycle = cycles.find((cycle) => cycle.sectionId === nextSection)?.id ?? "";
               const nextStudent = students.find((student) => student.sectionId === nextSection)?.id ?? "";
-              setSelectedCycleId(nextCycle);
               setSelectedStudentId(nextStudent);
               setDraft(null);
               setEditableText("");
+              setStatusMessage("");
             }}
           >
             {sections.map((section) => (
@@ -148,17 +198,38 @@ export function ReportStudio({ sections, cycles, students }: Props) {
         </div>
 
         <div className="grid gap-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-[var(--text-subtle)]">Cycle</label>
+          <label className="text-xs font-semibold uppercase tracking-wide text-[var(--text-subtle)]">Cycle Window</label>
           <select
             className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm"
-            value={selectedCycleValue}
-            onChange={(event) => setSelectedCycleId(event.target.value)}
+            value={cycleWindow}
+            onChange={(event) => {
+              setCycleWindow(event.target.value as CycleWindow);
+              setDraft(null);
+              setEditableText("");
+              setStatusMessage("");
+            }}
           >
-            {visibleCycles.map((cycle) => (
-              <option key={cycle.id} value={cycle.id}>
-                {cycle.name}
-              </option>
-            ))}
+            <option value="START_OF_TERM">Start of Term</option>
+            <option value="END_OF_TERM">End of Term</option>
+            <option value="ACTIVE_CYCLE">Active Cycle</option>
+          </select>
+          <p className="text-xs text-[var(--text-subtle)]">Using: {selectedCycleLabel}</p>
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold uppercase tracking-wide text-[var(--text-subtle)]">Evidence Source</label>
+          <select
+            className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm"
+            value={evidenceSource}
+            onChange={(event) => {
+              setEvidenceSource(event.target.value as EvidenceSource);
+              setDraft(null);
+              setEditableText("");
+              setStatusMessage("");
+            }}
+          >
+            <option value="APPROVED">Approved</option>
+            <option value="PENDING">Pending</option>
           </select>
         </div>
 
@@ -167,7 +238,12 @@ export function ReportStudio({ sections, cycles, students }: Props) {
           <select
             className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm"
             value={selectedStudentValue}
-            onChange={(event) => setSelectedStudentId(event.target.value)}
+            onChange={(event) => {
+              setSelectedStudentId(event.target.value);
+              setDraft(null);
+              setEditableText("");
+              setStatusMessage("");
+            }}
           >
             {visibleStudents.map((student) => (
               <option key={student.id} value={student.id}>
@@ -177,10 +253,55 @@ export function ReportStudio({ sections, cycles, students }: Props) {
           </select>
         </div>
 
+        <section className="grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+          <p className="text-sm font-semibold text-[var(--text-main)]">Teacher Voice (Optional)</p>
+
+          <div className="grid gap-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-subtle)]">Past Reports</label>
+            <input
+              type="file"
+              accept=".txt,.md,.doc,.docx,.pdf"
+              multiple
+              className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-subtle)]">Writing Style Notes</label>
+            <textarea
+              rows={3}
+              value={voiceNotes}
+              onChange={(event) => setVoiceNotes(event.target.value)}
+              placeholder="Keep tone warm, specific, and parent-friendly."
+              className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-subtle)]">Saved Files & Examples</label>
+            <input
+              type="file"
+              accept=".txt,.md,.csv,.doc,.docx,.pdf"
+              multiple
+              className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs"
+            />
+          </div>
+
+          <button
+            type="button"
+            className="btn-ghost inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold"
+            onClick={() => setVoiceMessage("Teacher Voice context attached for this draft session.")}
+          >
+            Apply Teacher Voice
+          </button>
+
+          {voiceMessage ? <p className="text-xs text-[var(--text-subtle)]">{voiceMessage}</p> : null}
+        </section>
+
         <button
           type="button"
           onClick={generate}
-          disabled={isPending || !selectedCycleValue || !selectedStudentValue}
+          disabled={isPending || !canGenerate}
           className="btn-primary inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-60"
         >
           {isPending ? "Generating..." : "Generate draft"}
@@ -200,12 +321,12 @@ export function ReportStudio({ sections, cycles, students }: Props) {
 
       <section className="grid gap-4 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Draft</h2>
+          <h2 className="text-lg font-semibold">Draft Workspace</h2>
           <button
             type="button"
             onClick={finalize}
             disabled={isPending || !canFinalize}
-            className="btn-ghost rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-50"
+            className="btn-primary rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-50"
           >
             Finalize draft
           </button>
@@ -244,7 +365,7 @@ export function ReportStudio({ sections, cycles, students }: Props) {
             <div className="grid gap-3">
               {draft.citations.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-[var(--border)] px-4 py-3 text-sm text-[var(--text-subtle)]">
-                  No citations returned. Approve more evidence and regenerate.
+                  No citations returned. Adjust evidence source and regenerate.
                 </p>
               ) : (
                 draft.citations.map((citation) => (
@@ -262,7 +383,7 @@ export function ReportStudio({ sections, cycles, students }: Props) {
           </>
         ) : (
           <p className="rounded-xl border border-dashed border-[var(--border)] px-4 py-6 text-sm text-[var(--text-subtle)]">
-            Generate a draft to begin.
+            Choose settings and generate a draft to begin.
           </p>
         )}
       </section>

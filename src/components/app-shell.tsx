@@ -35,7 +35,7 @@ function getFlowState(pathname: string) {
 
 export function AppShell({ children }: Props) {
   const pathname = usePathname();
-  const isMarketingRoute = pathname === "/" || pathname === "/login";
+  const isMarketingRoute = pathname === "/" || pathname === "/login" || pathname === "/signup";
   const flow = getFlowState(pathname);
 
   if (isMarketingRoute) {
@@ -53,10 +53,10 @@ export function AppShell({ children }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] text-sm font-semibold text-white">
-                OQ
+                CT
               </div>
               <div>
-                <h1 className="text-lg font-semibold">ObserveIQ</h1>
+                <h1 className="text-lg font-semibold">ClassTrack</h1>
                 <p className="text-[11px] text-[var(--text-subtle)]">Teacher evidence workspace</p>
               </div>
             </div>

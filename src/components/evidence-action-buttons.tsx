@@ -13,9 +13,10 @@ type Props = {
   currentSummary: string;
   currentStudentId: string | null;
   students: StudentOption[];
+  onResolved?: () => void;
 };
 
-export function EvidenceActionButtons({ evidenceId, currentSummary, currentStudentId, students }: Props) {
+export function EvidenceActionButtons({ evidenceId, currentSummary, currentStudentId, students, onResolved }: Props) {
   const router = useRouter();
   const [summary, setSummary] = useState(currentSummary);
   const [studentId, setStudentId] = useState(currentStudentId ?? "");
@@ -46,8 +47,10 @@ export function EvidenceActionButtons({ evidenceId, currentSummary, currentStude
         return;
       }
 
-      setFeedback(status === "APPROVED" ? "Approved and synced." : "Marked as rejected.");
-      router.refresh();
+      onResolved?.();
+      setTimeout(() => {
+        router.refresh();
+      }, 220);
     });
   };
 
@@ -74,7 +77,7 @@ export function EvidenceActionButtons({ evidenceId, currentSummary, currentStude
 
       <div className="grid gap-2">
         <label htmlFor={`summary-${evidenceId}`} className="text-xs font-semibold text-[var(--text-subtle)]">
-          Summary
+          Teacher-edited summary
         </label>
         <textarea
           id={`summary-${evidenceId}`}
@@ -90,21 +93,21 @@ export function EvidenceActionButtons({ evidenceId, currentSummary, currentStude
           type="button"
           onClick={() => patchEvidence("APPROVED")}
           disabled={isPending}
-          className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-xs font-semibold text-[var(--text-main)] disabled:opacity-50"
+          className="rounded-full border border-emerald-300/35 bg-[linear-gradient(135deg,rgba(16,185,129,0.92),rgba(5,150,105,0.88))] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_rgba(16,185,129,0.28)] hover:brightness-105 disabled:opacity-50"
         >
-          Approve
+          Accept
         </button>
         <button
           type="button"
           onClick={() => patchEvidence("REJECTED")}
           disabled={isPending}
-          className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-xs font-semibold text-[var(--text-subtle)] disabled:opacity-50"
+          className="rounded-full border border-rose-300/35 bg-[linear-gradient(135deg,rgba(239,68,68,0.9),rgba(190,24,93,0.86))] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_rgba(239,68,68,0.24)] hover:brightness-105 disabled:opacity-50"
         >
           Reject
         </button>
       </div>
 
-      {feedback ? <p className="text-xs text-[var(--text-subtle)]">{feedback}</p> : null}
+      {feedback ? <p className="text-xs text-rose-200">{feedback}</p> : null}
     </div>
   );
 }
