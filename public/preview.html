@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ObserveIQ — Observation notes. Organized. In seconds.</title>
+    <title>ClassTrack - Every student&rsquo;s progress, ready when you need it.</title>
 
     <!-- Tailwind (utility CSS) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -54,11 +54,14 @@
           Arial,
           "Apple Color Emoji",
           "Segoe UI Emoji";
-        background:
-          radial-gradient(1000px 700px at 20% 10%, rgba(59, 130, 246, 0.18), transparent 60%),
-          radial-gradient(900px 650px at 80% 25%, rgba(176, 137, 104, 0.16), transparent 60%),
-          radial-gradient(900px 700px at 55% 85%, rgba(16, 185, 129, 0.10), transparent 60%),
-          var(--bg);
+        background-color: var(--bg);
+        background-image:
+          radial-gradient(1400px 980px at 12% -10%, rgba(59, 130, 246, 0.22), transparent 68%),
+          radial-gradient(1250px 900px at 88% 12%, rgba(176, 137, 104, 0.18), transparent 70%),
+          radial-gradient(1200px 950px at 50% 110%, rgba(16, 185, 129, 0.12), transparent 72%);
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-attachment: fixed;
         color: var(--fg);
         overflow-x: hidden;
       }
@@ -68,9 +71,10 @@
         background-image:
           linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
           linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-        background-size: 72px 72px;
-        mask-image: radial-gradient(65% 60% at 50% 35%, black 50%, transparent 100%);
-        opacity: 0.25;
+        background-size: 96px 96px;
+        background-position: center top;
+        mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+        opacity: 0.16;
       }
 
       /* Apple-like frosted panels */
@@ -216,10 +220,10 @@
         <div class="glass mt-4 rounded-2xl px-4 py-3 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="h-9 w-9 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
-              <span class="text-white font-semibold">O</span>
+              <span class="text-white font-semibold">C</span>
             </div>
             <div class="leading-tight">
-              <div class="text-sm font-semibold">ObserveIQ</div>
+              <div class="text-sm font-semibold">ClassTrack</div>
               <div class="text-[11px] text-white/60 -mt-0.5">Teacher observation notes</div>
             </div>
           </div>
@@ -238,7 +242,7 @@
             </a>
             <a class="btn btn-primary text-sm" href="/login">
               <i data-lucide="arrow-right" class="h-4 w-4"></i>
-              Join pilot
+              Join ClassTrack
             </a>
           </div>
         </div>
@@ -252,21 +256,20 @@
           <div class="grid md:grid-cols-2 gap-10 md:gap-12 items-center">
             <div>
               <div class="caps text-[11px] text-white/55 mb-4">
-                Evidence-grade notes • AI grounded in your words
+                Report-ready notes &bull; Built from your words
               </div>
 
               <h1 class="tight text-4xl md:text-6xl font-semibold leading-[1.02]">
-                Observation notes.
-                <span class="text-white/70">Organized.</span>
+                Every student&rsquo;s progress,
+                <span class="text-white/70">ready when</span>
                 <span class="bg-clip-text text-transparent"
                   style="background-image: linear-gradient(135deg, rgba(59,130,246,1), rgba(176,137,104,1));">
-                  In seconds.
+                  you need it.
                 </span>
               </h1>
 
               <p class="mt-5 text-base md:text-lg text-white/70 leading-relaxed max-w-xl">
-                Capture classroom observations in 10 seconds, automatically tag and structure them with AI,
-                and generate report-ready summaries backed by sources.
+                No more forgetting the little things.
               </p>
 
               <div class="mt-8 flex flex-col sm:flex-row gap-3">
@@ -329,7 +332,7 @@
                   <div class="mt-4 glass-soft rounded-2xl p-4">
                     <div class="flex items-start justify-between gap-3">
                       <div class="text-sm text-white/75 leading-relaxed">
-                        “Distracted during independent work, needed multiple redirections.”
+                        &ldquo;Distracted during independent work, needed multiple redirections.&rdquo;
                       </div>
                       <i data-lucide="mic" class="h-4 w-4 text-white/60 mt-1"></i>
                     </div>
@@ -352,7 +355,7 @@
                     </div>
 
                     <div class="mt-4 text-xs text-white/55 flex items-center justify-between">
-                      <span>Today • 10:15 AM</span>
+                      <span>Today &bull; 10:15 AM</span>
                       <span class="flex items-center gap-1">
                         <i data-lucide="link" class="h-3.5 w-3.5"></i>
                         Sources locked
@@ -379,10 +382,7 @@
                 </div>
               </div>
 
-              <div class="mt-4 text-xs text-white/55 text-center">
-                Demo UI • Apple-like motion • Swiss grid typography
               </div>
-            </div>
           </div>
 
           <div class="mt-14 md:mt-20 border-t border-white/10"></div>
@@ -401,7 +401,7 @@
             </div>
             <div class="text-white/70 leading-relaxed">
               Capture notes fast, organize them automatically, and turn them into evidence-backed summaries.
-              No clutter. No busywork. No “AI hallucinations.”
+              No clutter. No busywork. No AI hallucinations.
             </div>
           </div>
 
@@ -467,10 +467,10 @@
             <div class="flex items-center justify-between gap-6 flex-wrap">
               <div>
                 <div class="caps text-[11px] text-white/55 mb-3">How it works</div>
-                <h3 class="tight text-2xl md:text-4xl font-semibold">Capture → Organize → Summarize</h3>
+                <h3 class="tight text-2xl md:text-4xl font-semibold">Capture &rarr; Organize &rarr; Summarize</h3>
               </div>
               <div class="text-white/65 max-w-xl">
-                Every output is grounded. If a summary line can’t cite a note, it doesn’t ship.
+                Every output is grounded. If a summary line can&rsquo;t cite a note, it doesn&rsquo;t ship.
               </div>
             </div>
 
@@ -491,7 +491,7 @@
                   <div class="font-semibold">AI organizes</div>
                 </div>
                 <p class="mt-3 text-sm text-white/70 leading-relaxed">
-                  Suggests tags + structure. Teacher accepts or edits. No “new facts.”
+                  Suggests tags + structure. Teacher accepts or edits. No &ldquo;new facts.&rdquo;
                 </p>
               </div>
 
@@ -501,7 +501,7 @@
                   <div class="font-semibold">Summaries with sources</div>
                 </div>
                 <p class="mt-3 text-sm text-white/70 leading-relaxed">
-                  Weekly bullet summaries + drafts for parent emails/report comments — each line cites notes.
+                  Weekly bullet summaries + drafts for parent emails/report comments &mdash; each line cites notes.
                 </p>
               </div>
             </div>
@@ -538,7 +538,7 @@
             </div>
 
             <div class="glass rounded-[32px] p-7 md:p-8">
-              <div class="caps text-[11px] text-white/55">Example: “grounded output”</div>
+              <div class="caps text-[11px] text-white/55">Example: &ldquo;grounded output&rdquo;</div>
               <div class="mt-4 text-sm text-white/78 leading-relaxed">
                 <div class="glass-soft rounded-2xl p-4">
                   <div class="font-semibold text-white/90">Weekly Summary (Jayden)</div>
@@ -556,7 +556,7 @@
               </div>
 
               <div class="mt-4 text-xs text-white/55">
-                If a line has no sources, it won’t appear.
+                If a line has no sources, it won&rsquo;t appear.
               </div>
             </div>
           </div>
@@ -574,7 +574,7 @@
               </h3>
             </div>
             <div class="text-white/70 max-w-xl">
-              For the hackathon demo, this is just presentation—swap with whatever fits your pitch.
+              For the hackathon demo, this is just presentation&mdash;swap with whatever fits your pitch.
             </div>
           </div>
 
@@ -602,7 +602,7 @@
                 <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Weekly cited summaries</li>
                 <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Parent/report drafts</li>
               </ul>
-              <a class="btn btn-primary w-full mt-6" href="/login">Join pilot</a>
+              <a class="btn btn-primary w-full mt-6" href="/login">Join ClassTrack</a>
             </div>
 
             <div class="glass rounded-3xl p-7">
@@ -636,7 +636,7 @@
                   One perfect flow.
                 </h3>
                 <p class="mt-4 text-white/70 leading-relaxed">
-                  Demo capture → AI tags → cited weekly summary → export. Keep scope tight. Make it beautiful.
+                  Demo capture &rarr; AI tags &rarr; cited weekly summary &rarr; export. Keep scope tight. Make it beautiful.
                 </p>
                 <div class="mt-7 flex gap-3 flex-wrap">
                   <a class="btn btn-primary" href="/login">
@@ -653,20 +653,20 @@
               <div class="glass-soft rounded-3xl p-6">
                 <div class="text-sm font-semibold">Demo checklist</div>
                 <ul class="mt-4 space-y-2 text-sm text-white/75">
-                  <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Seating chart tap → note</li>
+                  <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Seating chart tap &rarr; note</li>
                   <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> AI tags + structure</li>
                   <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Weekly summary with sources</li>
                   <li class="flex gap-2"><i data-lucide="check" class="h-4 w-4 mt-0.5"></i> Export evidence pack (PDF)</li>
                 </ul>
                 <div class="mt-5 text-xs text-white/55">
-                  Tip: judges love “sources” because it proves reliability.
+                  Tip: judges love &ldquo;sources&rdquo; because it proves reliability.
                 </div>
               </div>
             </div>
           </div>
 
           <footer class="mt-10 text-center text-xs text-white/45">
-            © <span id="year"></span> ObserveIQ • Minimal demo site for hackathon
+            &copy; <span id="year"></span> ClassTrack
           </footer>
         </div>
       </section>
@@ -716,3 +716,9 @@
     </script>
   </body>
 </html>
+
+
+
+
+
+
